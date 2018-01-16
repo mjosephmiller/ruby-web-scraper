@@ -6,7 +6,6 @@ require 'csv'
 class Scraper
     attr_accessor :parse_page
     attr_accessor :doc
-    attr_reader :agent
 
     def initialize
         @doc = HTTParty.get('http://www.wegottickets.com/searchresults/all')
