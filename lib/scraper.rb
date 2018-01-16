@@ -1,6 +1,5 @@
 require 'HTTParty'
 require 'Nokogiri'
-require 'Open-uri'
 require 'csv'
 
 class Scraper
