@@ -42,4 +42,13 @@ class Scraper
         end
         events
     end
+
+    def export_events
+        events_arr = events
+        CSV.open("data.csv", "wb") do |csv|
+            events_arr.each do |event|
+                event.to_a.each { |elem| csv << elem }
+            end
+        end
+    end
 end
