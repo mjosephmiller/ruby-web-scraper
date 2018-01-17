@@ -1,7 +1,6 @@
 require 'minitest/autorun'
 require './lib/scraper'
 require 'vcr'
-require 'JSON'
 
 VCR.configure do |c|
   c.cassette_library_dir = 'test/vcr_cassettes'
@@ -30,7 +29,7 @@ class ScraperTest < Minitest::Test
     def test_events_returns_an_array_of_events
         VCR.use_cassette('we_got_tickets/search', match_requests_on: %i[method uri headers body]) do
             page_limit = 1
-            @scraper.search('adv_genre', 1) # burlesque/cabaret
+            @scraper.search('adv_genre', 1)
             events = @scraper.events(page_limit)
             assert events.is_a? Array
             required = [:event_name, :venue_name, :city, :date, :price]
@@ -41,11 +40,19 @@ class ScraperTest < Minitest::Test
         end
     end
 
-    def test_export_events
+    def test_export_events_without_search_query
+        VCR.use_cassette('we_got_tickets/search', match_requests_on: %i[method uri headers body]) do
+            @scraper.export_events(page_limit: 1)
+        end
+        csv_sample =  IO.readlines('data.csv')
+        assert_equal "venue_name,Leighton House", csv_sample[1].strip
+    end
+
+    def test_export_events_with_search_query
         VCR.use_cassette('we_got_tickets/search', match_requests_on: %i[method uri headers body]) do
             @scraper.export_events(search: { form_field: 'adv_genre', value: 1 }, page_limit: 1)
         end
-        csv_sample =  IO.readlines('data.csv')[0]
-        assert csv_sample.include? 'event_name'
+        csv_sample =  IO.readlines('data.csv')
+        assert_equal 'venue_name,Bethnal Green Working Mens Club', csv_sample[1].strip
     end
 end
