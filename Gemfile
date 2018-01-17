@@ -1,7 +1,6 @@
 source "https://rubygems.org"
 
-gem 'httparty'
-gem 'nokogiri'
+gem 'mechanize'
 gem 'csv'
 
 group :development, :test do
