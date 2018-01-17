@@ -4,7 +4,7 @@ require 'pp'
 
 class Scraper
     attr_accessor :doc
-    attr_accessor :agent
+    attr_reader :agent
 
     def initialize
         @agent = Mechanize.new
@@ -13,7 +13,7 @@ class Scraper
     end
 
     def search(form_field, value)
-        form = @doc.forms[1]
+        form = @doc.forms[1] # advanced search form
         form.field_with(name: form_field).options[value].click
         form.submit
     end
