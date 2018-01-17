@@ -1,33 +1,50 @@
 require 'minitest/autorun'
 require './lib/scraper'
+require 'vcr'
+require 'JSON'
+
+VCR.configure do |c|
+  c.cassette_library_dir = 'test/vcr_cassettes'
+  c.hook_into :webmock
+end
 
 class ScraperTest < Minitest::Test
     def setup
-        @scraper = Scraper.new
+        VCR.use_cassette('we_got_tickets/get', match_requests_on: %i[method uri headers body]) do
+            @scraper = Scraper.new
+        end
     end
 
     def test_scraper_initializes_with_a_doc
-        assert_equal '200', @scraper.doc.response.code
+        assert_equal '200', @scraper.doc.code
     end
 
-    def test_scrape_current_page_returns_parsed_doc
-        response = @scraper.scrape_current_page
-        assert_equal Nokogiri::HTML::Document, response.class
+    def test_search_takes_two_arguments_and_filters_results
+        VCR.use_cassette('we_got_tickets/search', match_requests_on: %i[method uri headers body]) do
+            response = @scraper.search('adv_genre', 1)
+            assert_equal "Genre: Cabaret/Burlesque", response.at('#queryFeedback').text.strip
+            assert_equal '(22 events found)', response.at('#resultsCount').text.strip
+        end
     end
 
     def test_events_returns_an_array_of_events
-        @scraper.scrape_current_page
-        events = @scraper.events
-        assert events.is_a? Array
-        required = [:event_name, :venue_name, :city, :date, :price]
-        # optional :artist_name
-        required.each do |key|
-            refute events.first[key].nil?
+        VCR.use_cassette('we_got_tickets/search', match_requests_on: %i[method uri headers body]) do
+            page_limit = 1
+            @scraper.search('adv_genre', 1) # burlesque/cabaret
+            events = @scraper.events(page_limit)
+            assert events.is_a? Array
+            required = [:event_name, :venue_name, :city, :date, :price]
+            # optional :artist_name
+            required.each do |key|
+                refute events.first[key].nil?
+            end
         end
     end
 
     def test_export_events
-        @scraper.export_events
+        VCR.use_cassette('we_got_tickets/search', match_requests_on: %i[method uri headers body]) do
+            @scraper.export_events(search: { form_field: 'adv_genre', value: 1 }, page_limit: 1)
+        end
         csv_sample =  IO.readlines('data.csv')[0]
         assert csv_sample.include? 'event_name'
     end
